@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
-		<title>three.js webgl - loaders - OBJ loader</title>
+		<title>Flight Simulater</title>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 		<style>
@@ -32,14 +32,12 @@
 
 		<script src="libs/three.min.js"></script>
 		<script src="js/OBJLoader.js"></script>
-		<script src="OrbitControls.js"></script>
+		<script src="js/OrbitControls.js"></script>
 
 		<script>
 			var container;
-			var camera, scene, renderer;
-			var mouseX = 0, mouseY = 0;
-			var windowHalfX = window.innerWidth / 2;
-			var windowHalfY = window.innerHeight / 2;
+			var camera, scene, renderer, controls;
+
 			init();
 			animate();
 			function init() {
@@ -78,50 +76,62 @@
 				var onError = function ( xhr ) {
 				};
 				var loader = new THREE.ImageLoader( manager );
-				loader.load( 'textures/UV_Grid_Sm.jpg', function ( image ) {
+				//loader.load( 'textures/UV_Grid_Sm.jpg', function ( image ) {
+				loader.load( 'obj/B2_Spirit/455deb7c.png', function ( image ) {
+					
 					texture.image = image;
 					texture.needsUpdate = true;
 				} );
-				// model
+
+				// MODEL
 				var loader = new THREE.OBJLoader( manager );
-				loader.load( 'obj/heli.obj', function ( object ) {
+				loader.load( 'obj/B2_Spirit/B2_Spirit.obj', function ( object ) {
 					object.traverse( function ( child ) {
 						if ( child instanceof THREE.Mesh ) {
 							child.material.map = texture;
 						}
 					} );
-					object.position.y = - 80;
+					//object.position.y = - 80;
 					scene.add( object );
 				}, onProgress, onError );
-				//
+				
+
+				//SKYBOX
+	            var imagePrefix = "images/skybox/DarkSea-";
+		        var directions  = ["xpos", "xneg", "ypos", "yneg", "zpos", "zneg"];
+				var imageSuffix = ".jpg";
+				var skyGeometry = new THREE.CubeGeometry( 5000, 5000, 5000 );	
+				
+				var materialArray = [];
+				for (var i = 0; i < 6; i++)
+					materialArray.push( new THREE.MeshBasicMaterial({
+						map: THREE.ImageUtils.loadTexture( imagePrefix + directions[i] + imageSuffix ),
+						side: THREE.BackSide
+					}));
+				var skyMaterial = new THREE.MeshFaceMaterial( materialArray );
+				var skyBox = new THREE.Mesh( skyGeometry, skyMaterial );
+				scene.add( skyBox );
+
+				//RENDER
 				renderer = new THREE.WebGLRenderer();
 				renderer.setPixelRatio( window.devicePixelRatio );
 				renderer.setSize( window.innerWidth, window.innerHeight );
 				container.appendChild( renderer.domElement );
-				document.addEventListener( 'mousemove', onDocumentMouseMove, false );
-				//
-				window.addEventListener( 'resize', onWindowResize, false );
-			}
-			function onWindowResize() {
-				windowHalfX = window.innerWidth / 2;
-				windowHalfY = window.innerHeight / 2;
-				camera.aspect = window.innerWidth / window.innerHeight;
-				camera.updateProjectionMatrix();
-				renderer.setSize( window.innerWidth, window.innerHeight );
-			}
-			function onDocumentMouseMove( event ) {
-				mouseX = ( event.clientX - windowHalfX ) / 2;
-				mouseY = ( event.clientY - windowHalfY ) / 2;
+				controls = new THREE.OrbitControls( camera, renderer.domElement );
+
+				//HELPER
+				var axes = new THREE.AxisHelper(50);
+				axes.position = scene.position;
+				scene.add(axes);
+
 			}
 			//
 			function animate() {
 				requestAnimationFrame( animate );
+				controls.update();
 				render();
 			}
 			function render() {
-				camera.position.x += ( mouseX - camera.position.x ) * .05;
-				camera.position.y += ( - mouseY - camera.position.y ) * .05;
-				camera.lookAt( scene.position );
 				renderer.render( scene, camera );
 			}
 		</script>
